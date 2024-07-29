@@ -1,4 +1,3 @@
-from typing import Dict, List, Optional, Union, Set
 from dataclasses import dataclass, field
 import openai
 import logging
@@ -8,12 +7,12 @@ import threading
 logger = logging.getLogger(__name__)
 
 @dataclass
-class Config:
-    model_registry: Dict[str, openai.Client] = field(default_factory=dict)
+class Config[Serializer]:
+    model_registry: dict[str, openai.Client] = field(default_factory=dict)
     verbose: bool = False
     wrapped_logging: bool = True
-    override_wrapped_logging_width: Optional[int] = None
-    serializers: Set["Serializer"] = field(default_factory=set)
+    override_wrapped_logging_width: int | None = None
+    serializers: set[Serializer] = field(default_factory=set)
     autocommit: bool = False
 
     def __post_init__(self):
@@ -29,7 +28,7 @@ class Config:
         return len(self.serializers) > 0
 
     @contextmanager
-    def model_registry_override(self, overrides: Dict[str, openai.Client]):
+    def model_registry_override(self, overrides: dict[str, openai.Client]):
         if not hasattr(self._local, 'stack'):
             self._local.stack = []
         
@@ -44,7 +43,7 @@ class Config:
         finally:
             self._local.stack.pop()
 
-    def get_client_for(self, model_name: str) -> Optional[openai.Client]:
+    def get_client_for(self, model_name: str) -> openai.Client | None:
         current_registry = self._local.stack[-1] if hasattr(self._local, 'stack') and self._local.stack else self.model_registry
         client = current_registry.get(model_name)
         if client is None:
@@ -62,4 +61,4 @@ class Config:
         self.autocommit = autocommit or self.autocommit
 
 # Singleton instance
-config = Config()
+config: Config = Config()
